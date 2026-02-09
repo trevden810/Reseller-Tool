@@ -16,7 +16,21 @@ from serpapi import EbaySearch
 
 load_dotenv()
 
-SERPAPI_KEY = os.getenv("SERPAPI_API_KEY", "")
+from functools import lru_cache
+
+@lru_cache(maxsize=1)
+def get_api_key() -> str:
+    """Load API key from Streamlit secrets (cloud) or .env (local)."""
+    # 1. Try Streamlit secrets (cloud)
+    try:
+        import streamlit as st
+        if "SERPAPI_API_KEY" in st.secrets:
+            return st.secrets["SERPAPI_API_KEY"]
+    except Exception:
+        pass
+
+    # 2. Fallback to env var (local)
+    return os.getenv("SERPAPI_API_KEY", "")
 
 
 @dataclass
@@ -61,7 +75,7 @@ def search_ebay(
     Returns:
         List of EbayProduct dataclasses.
     """
-    if not SERPAPI_KEY:
+    if not get_api_key():
         raise ValueError(
             "SERPAPI_API_KEY not set. Get a free key at https://serpapi.com"
         )
@@ -80,7 +94,7 @@ def search_ebay(
     }
 
     params: dict = {
-        "api_key": SERPAPI_KEY,
+        "api_key": get_api_key(),
         "engine": "ebay",
         "_nkw": query,
         "ebay_domain": "ebay.com",
@@ -178,11 +192,11 @@ def search_ebay_sold(query: str, limit: int = 20) -> list[EbayProduct]:
     This is critical for dropshipping — it shows what people actually
     bought, not just what's listed.
     """
-    if not SERPAPI_KEY:
+    if not get_api_key():
         raise ValueError("SERPAPI_API_KEY not set.")
 
     params = {
-        "api_key": SERPAPI_KEY,
+        "api_key": get_api_key(),
         "engine": "ebay",
         "_nkw": query,
         "ebay_domain": "ebay.com",

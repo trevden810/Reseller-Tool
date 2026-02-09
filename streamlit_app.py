@@ -2,8 +2,13 @@
 import sys
 from pathlib import Path
 
-# Add src/ to path so reseller_tool package is importable
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+import streamlit as st
 
-# Re-export the full app
-from reseller_tool.app import *  # noqa: F401, F403
+# Add src/ to path so reseller_tool package is importable
+sys.path.append(str(Path(__file__).parent / "src"))
+
+# Import runs all Streamlit code at module level
+try:
+    import reseller_tool.app
+except ImportError as e:
+    st.error(f"Failed to import app: {e}")

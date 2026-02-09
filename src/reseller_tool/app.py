@@ -155,24 +155,32 @@ with tab_analyze:
             st.code(f"{name}: {quick_margin_check(sell, source)}")
     else:
         # --- Run search ---
-        with st.spinner("Searching eBay..."):
-            ebay_results = search_ebay(
-                query=query,
-                min_price=min_price,
-                max_price=max_price,
-                sort="best_match",
-                limit=result_limit,
-            )
+        try:
+            with st.spinner("Searching eBay..."):
+                ebay_results = search_ebay(
+                    query=query,
+                    min_price=min_price,
+                    max_price=max_price,
+                    sort="best_match",
+                    limit=result_limit,
+                )
+        except Exception as e:
+            st.error(f"eBay search failed: {e}")
+            ebay_results = []
 
-        with st.spinner("Searching AliExpress..."):
-            ali_results = search_aliexpress(
-                query=query,
-                max_price=ali_max_price,
-                sort="orders",
-                limit=result_limit,
-                min_orders=min_ali_orders,
-                min_rating=min_ali_rating,
-            )
+        try:
+            with st.spinner("Searching AliExpress..."):
+                ali_results = search_aliexpress(
+                    query=query,
+                    max_price=ali_max_price,
+                    sort="orders",
+                    limit=result_limit,
+                    min_orders=min_ali_orders,
+                    min_rating=min_ali_rating,
+                )
+        except Exception as e:
+            st.error(f"AliExpress search failed: {e}")
+            ali_results = []
 
         # Summary metrics
         col1, col2, col3 = st.columns(3)
@@ -191,15 +199,20 @@ with tab_analyze:
             st.stop()
 
         # --- Analyze ---
-        with st.spinner("Matching products and calculating margins..."):
-            df = analyze_opportunities(
-                ebay_products=ebay_results,
-                ali_products=ali_results,
-                keyword=query,
-                min_similarity=min_similarity,
-                use_promoted=use_promoted,
-                include_trends=include_trends,
-            )
+        try:
+            with st.spinner("Matching products and calculating margins..."):
+                df = analyze_opportunities(
+                    ebay_products=ebay_results,
+                    ali_products=ali_results,
+                    keyword=query,
+                    min_similarity=min_similarity,
+                    use_promoted=use_promoted,
+                    include_trends=include_trends,
+                )
+        except Exception as e:
+            st.error(f"Analysis failed: {e}")
+            df = pd.DataFrame()  # Empty DF to handle flow
+            st.stop()
 
         col3.metric("Profitable matches", len(df))
 
